@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "codegen": "supabase gen types typescript --project-id sjrxwtaccikcvsjukesf --schema public > types/supabase.ts",
     "tsc": "tsc --noEmit",
     "prepare": "husky",
     "prettier": "prettier --write .",
