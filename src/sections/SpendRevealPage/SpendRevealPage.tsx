@@ -1,13 +1,12 @@
 "use client";
 
 import { ArrowRight, Square } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { CountUp } from "@/components/common/CountUp";
+import { NavButton } from "@/components/common/NavButton";
 import { Typography } from "@/components/common/Typography";
 import { OnboardingShell } from "@/components/auth/OnboardingShell";
-import { Button } from "@/components/ui/button";
 import { spendRevealContent } from "@/data/onboarding";
 import { supabase } from "@/lib/supabase";
 
@@ -102,15 +101,13 @@ export const SpendRevealPage = () => {
         </ul>
       </div>
 
-      <Button
-        asChild
+      <NavButton
+        href="/link-telegram"
+        trailingIcon={<ArrowRight aria-hidden="true" className="size-4" />}
         className="h-12 w-full rounded-full text-sm font-semibold"
       >
-        <Link href="/link-telegram">
-          {spendRevealContent.cta}
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Link>
-      </Button>
+        {spendRevealContent.cta}
+      </NavButton>
     </OnboardingShell>
   );
 };

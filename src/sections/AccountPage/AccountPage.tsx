@@ -22,9 +22,9 @@ export const AccountPage = () => {
   const [user, setUser] = useState<AccountUser | null>(null);
 
   useEffect(() => {
+    // Route protection lives in src/proxy.ts; this only loads display data.
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) {
-        router.replace("/signin");
         return;
       }
       const metadata = data.user.user_metadata as

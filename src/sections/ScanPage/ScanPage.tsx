@@ -37,6 +37,11 @@ export const ScanPage = () => {
     0,
   );
 
+  // Prefetch the reveal so the auto-advance at 100% is instant.
+  useEffect(() => {
+    router.prefetch("/spend-reveal");
+  }, [router]);
+
   useEffect(() => {
     const id = window.setInterval(() => {
       setProcessed((previous) => {

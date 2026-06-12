@@ -1,11 +1,11 @@
 import { ShieldCheck, Square } from "lucide-react";
 import Link from "next/link";
 
+import { NavButton } from "@/components/common/NavButton";
 import { Typography } from "@/components/common/Typography";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { IconBlock } from "@/components/auth/IconBlock";
 import { OnboardingShell } from "@/components/auth/OnboardingShell";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { connectGmailContent } from "@/data/onboarding";
 
@@ -47,15 +47,13 @@ export const ConnectGmailPage = () => {
 
       <div className="flex flex-col gap-3">
         {/* Routes straight to the simulated scan until Gmail OAuth lands. */}
-        <Button
-          asChild
+        <NavButton
+          href="/scan"
           className="h-12 w-full rounded-full text-sm font-semibold"
         >
-          <Link href="/scan">
-            <GoogleIcon className="size-4.5" />
-            {connectGmailContent.cta}
-          </Link>
-        </Button>
+          <GoogleIcon className="size-4.5" />
+          {connectGmailContent.cta}
+        </NavButton>
         <Link
           href="/profile-setup"
           className="self-center rounded-sm text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { AuthHashHandler } from "@/components/auth/AuthHashHandler";
 import { StoreProvider } from "@/providers/StoreProvider";
 
 import "./globals.css";
@@ -31,7 +32,10 @@ const RootLayout = ({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider>
+          <AuthHashHandler />
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );

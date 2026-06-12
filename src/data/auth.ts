@@ -47,6 +47,34 @@ export const signInContent = {
   signUpCta: "Create account",
 } as const;
 
+export const forgotPasswordContent = {
+  title: "Reset your password",
+  subtitle: "Enter your email and we'll send you a reset link.",
+  email: {
+    label: "Email",
+    placeholder: "you@email.com",
+  },
+  submitCta: "Send reset link",
+  submittingCta: "Sending…",
+  successMessage: "Reset link sent. Check your inbox.",
+  backCta: "Back to sign in",
+} as const;
+
+export const resetPasswordContent = {
+  title: "Set a new password",
+  subtitle: "Choose a new password for your account.",
+  password: {
+    label: "New password",
+    placeholder: "At least 8 characters",
+  },
+  confirmPassword: {
+    label: "Confirm password",
+    placeholder: "Repeat your new password",
+  },
+  submitCta: "Update password",
+  submittingCta: "Updating…",
+} as const;
+
 export const signInShowcase = {
   headlineLines: ["Welcome back.", "Your subs missed you."],
   subheadline:

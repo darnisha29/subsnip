@@ -29,6 +29,7 @@ export const ProfileSetupForm = () => {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ProfileSetupFormValues>({
     resolver: yupResolver(profileSetupSchema),
@@ -54,6 +55,9 @@ export const ProfileSetupForm = () => {
     });
   }, [setValue]);
 
+  // Live validity for the disabled state without surfacing errors early.
+  const canSubmit = profileSetupSchema.isValidSync(watch());
+
   const onSubmit = async (values: ProfileSetupFormValues) => {
     setServerError(null);
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -61,7 +65,9 @@ export const ProfileSetupForm = () => {
       setServerError("Your session has expired. Please sign in again.");
       return;
     }
-    const { error } = await supabase
+    // Update-only by design: the profiles row is created by the DB signup
+    // trigger (subsnip-be), and the authenticated role has no INSERT grant.
+    const { data: updated, error } = await supabase
       .from("profiles")
       .update({
         name: values.name,
@@ -71,9 +77,17 @@ export const ProfileSetupForm = () => {
         quiet_hours_end: values.quietHoursEnd,
         onboarding_completed_at: new Date().toISOString(),
       })
-      .eq("id", userData.user.id);
+      .eq("id", userData.user.id)
+      .select("id")
+      .maybeSingle();
     if (error) {
       setServerError(error.message);
+      return;
+    }
+    if (!updated) {
+      setServerError(
+        "We couldn't find your profile. Please sign out and sign in again.",
+      );
       return;
     }
     router.push("/account");
@@ -186,7 +200,7 @@ export const ProfileSetupForm = () => {
 
       <Button
         type="submit"
-        disabled={isSubmitting}
+        disabled={!canSubmit || isSubmitting}
         aria-busy={isSubmitting}
         className="h-12 w-full rounded-full text-sm font-semibold"
       >

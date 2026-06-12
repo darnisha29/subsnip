@@ -2,54 +2,47 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import { ArrowRight, LoaderCircle } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { PasswordField } from "@/components/common/PasswordField";
 import { TextField } from "@/components/common/TextField";
 import { Typography } from "@/components/common/Typography";
 import { Button } from "@/components/ui/button";
-import { signInContent } from "@/data/auth";
+import { forgotPasswordContent } from "@/data/auth";
 import { supabase } from "@/lib/supabase";
-import { type SignInFormValues, signInSchema } from "@/lib/validations/auth";
+import {
+  type ForgotPasswordFormValues,
+  forgotPasswordSchema,
+} from "@/lib/validations/auth";
 
-export const SignInForm = () => {
-  const router = useRouter();
+export const ForgotPasswordForm = () => {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<SignInFormValues>({
-    resolver: yupResolver(signInSchema),
+  } = useForm<ForgotPasswordFormValues>({
+    resolver: yupResolver(forgotPasswordSchema),
     mode: "onTouched",
   });
 
   // Live validity for the disabled state without surfacing errors early.
-  const canSubmit = signInSchema.isValidSync(watch());
+  const canSubmit = forgotPasswordSchema.isValidSync(watch());
 
-  const onSubmit = async (values: SignInFormValues) => {
+  const onSubmit = async (values: ForgotPasswordFormValues) => {
     setServerError(null);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
+    setIsSuccess(false);
+    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
     });
     if (error) {
       setServerError(error.message);
       return;
     }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completed_at")
-      .eq("id", data.user.id)
-      .maybeSingle();
-    router.push(
-      profile?.onboarding_completed_at ? "/account" : "/connect-gmail",
-    );
+    setIsSuccess(true);
   };
 
   return (
@@ -61,33 +54,26 @@ export const SignInForm = () => {
       <TextField
         id="email"
         type="email"
-        label={signInContent.email.label}
-        placeholder={signInContent.email.placeholder}
+        label={forgotPasswordContent.email.label}
+        placeholder={forgotPasswordContent.email.placeholder}
         autoComplete="email"
         inputMode="email"
         error={errors.email?.message}
         {...register("email")}
       />
-      <div className="flex flex-col gap-1.5">
-        <PasswordField
-          id="password"
-          label={signInContent.password.label}
-          placeholder={signInContent.password.placeholder}
-          autoComplete="current-password"
-          error={errors.password?.message}
-          {...register("password")}
-        />
-        <Link
-          href="/forgot-password"
-          className="self-end rounded-sm text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          {signInContent.forgotPassword}
-        </Link>
-      </div>
 
       {serverError && (
         <Typography variant="error" role="alert">
           {serverError}
+        </Typography>
+      )}
+      {isSuccess && (
+        <Typography
+          variant="small"
+          role="status"
+          className="rounded-lg bg-secondary px-3 py-2.5 text-secondary-foreground"
+        >
+          {forgotPasswordContent.successMessage}
         </Typography>
       )}
 
@@ -100,11 +86,11 @@ export const SignInForm = () => {
         {isSubmitting ? (
           <>
             <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-            {signInContent.submittingCta}
+            {forgotPasswordContent.submittingCta}
           </>
         ) : (
           <>
-            {signInContent.submitCta}
+            {forgotPasswordContent.submitCta}
             <ArrowRight aria-hidden="true" className="size-4" />
           </>
         )}

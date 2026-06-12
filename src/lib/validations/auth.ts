@@ -32,6 +32,31 @@ export const signInSchema = yup.object({
 
 export type SignInFormValues = yup.InferType<typeof signInSchema>;
 
+export const forgotPasswordSchema = yup.object({
+  email: yup
+    .string()
+    .trim()
+    .required("Email is required")
+    .email("Enter a valid email address"),
+});
+
+export type ForgotPasswordFormValues = yup.InferType<
+  typeof forgotPasswordSchema
+>;
+
+export const resetPasswordSchema = yup.object({
+  password: yup
+    .string()
+    .required("Password is required")
+    .min(8, "Password must be at least 8 characters"),
+  confirmPassword: yup
+    .string()
+    .required("Confirm your new password")
+    .oneOf([yup.ref("password")], "Passwords must match"),
+});
+
+export type ResetPasswordFormValues = yup.InferType<typeof resetPasswordSchema>;
+
 export const profileSetupSchema = yup.object({
   name: yup.string().trim().required("Your name is required"),
   language: yup
