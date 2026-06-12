@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
       "coverage/**",
       "next-env.d.ts",
       "supabase/types.ts", // generated types if you generate them
+      "src/components/ui/**", // shadcn-generated components, never edited by hand
     ],
   },
   ...nextVitals,

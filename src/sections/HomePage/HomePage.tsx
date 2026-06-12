@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { Typography } from "@/components/common/Typography";
+
 export const HomePage = () => {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-background font-sans">
@@ -12,13 +14,23 @@ export const HomePage = () => {
           priority
         />
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <span className="rounded-full bg-pill px-4 py-1 text-sm font-medium text-pill-foreground">
+          <Typography
+            as="span"
+            variant="small"
+            className="rounded-full bg-pill px-4 py-1 font-medium text-pill-foreground"
+          >
             Subsnip
-          </span>
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-foreground">
+          </Typography>
+          <Typography
+            variant="h1"
+            className="max-w-xs text-3xl leading-10 sm:text-3xl"
+          >
             To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-foreground/70">
+          </Typography>
+          <Typography
+            variant="lead"
+            className="max-w-md text-lg leading-8 text-foreground/70 sm:text-lg sm:leading-8"
+          >
             Looking for a starting point or more instructions? Head over to{" "}
             <a
               href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
@@ -34,7 +46,7 @@ export const HomePage = () => {
               Learning
             </a>{" "}
             center.
-          </p>
+          </Typography>
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
           <a
