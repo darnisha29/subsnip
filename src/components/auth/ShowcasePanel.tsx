@@ -25,7 +25,7 @@ export const ShowcasePanel = () => {
               prefix="₹"
               className="text-4xl font-bold tracking-tight text-primary tabular-nums sm:text-5xl"
             />
-            <Typography as="span" variant="caption" className="text-tertiary">
+            <Typography as="span" variant="small" className="text-tertiary">
               {preview.spendMeta}
             </Typography>
           </div>

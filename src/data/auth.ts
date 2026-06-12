@@ -27,6 +27,35 @@ export const signUpContent = {
   signInCta: "Sign in",
 } as const;
 
+export const signInContent = {
+  title: "Sign in",
+  subtitle: "Use the method you signed up with.",
+  googleCta: "Continue with Google",
+  divider: "or with email",
+  email: {
+    label: "Email",
+    placeholder: "you@email.com",
+  },
+  password: {
+    label: "Password",
+    placeholder: "Your password",
+  },
+  forgotPassword: "Forgot password?",
+  submitCta: "Sign in",
+  submittingCta: "Signing in…",
+  signUpPrompt: "New here?",
+  signUpCta: "Create account",
+} as const;
+
+export const signInShowcase = {
+  headlineLines: ["Welcome back.", "Your subs missed you."],
+  subheadline:
+    "Sign in to see what's renewing this week and how much you've saved by cancelling the ones you didn't use.",
+  savedLabel: "Your total saved · so far",
+  savedAmount: 47800,
+  savedMeta: "3 subs cancelled this month",
+} as const;
+
 export const signUpShowcase = {
   headline: "Stop paying for subscriptions you forgot you had.",
   subheadline:

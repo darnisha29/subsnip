@@ -6,7 +6,7 @@ import { TrustBadges } from "@/components/auth/TrustBadges";
 import { Separator } from "@/components/ui/separator";
 import { signUpShowcase } from "@/data/auth";
 
-export const SignUpShowcase = () => {
+export const AuthShowcase = () => {
   return (
     <div className="flex flex-col gap-6 duration-700 animate-in fade-in slide-in-from-bottom-4">
       <AppLogo className="mb-2 lg:mb-6" />
@@ -18,7 +18,7 @@ export const SignUpShowcase = () => {
         >
           {signUpShowcase.headline}
         </Typography>
-        <Typography variant="lead" className="max-w-lg">
+        <Typography variant="lead" className="max-w-lg sm:text-lg sm:leading-8">
           {signUpShowcase.subheadline}
         </Typography>
       </header>

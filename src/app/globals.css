@@ -18,6 +18,9 @@
   --color-surface-tint: #f4f3ff;
   /* Telegram brand blue, used only for Telegram-related UI */
   --color-telegram: #2aabee;
+  /* Soft icon-block fills for onboarding steps */
+  --color-telegram-tint: #e0f4fe;
+  --color-success-tint: #eaf3de;
 }
 
 @theme inline {

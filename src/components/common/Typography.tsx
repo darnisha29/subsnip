@@ -9,11 +9,14 @@ const typographyVariants = cva("", {
       h2: "text-xl font-semibold tracking-tight text-foreground sm:text-2xl",
       h3: "text-lg font-semibold text-foreground",
       h4: "text-base font-semibold text-foreground",
-      lead: "text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7",
-      body: "text-sm leading-6 text-foreground",
-      small: "text-sm text-muted-foreground",
+      lead: "text-base leading-7 text-muted-foreground",
+      body: "text-base leading-7 text-foreground",
+      small: "text-sm leading-6 text-muted-foreground",
       caption: "text-xs text-tertiary",
       error: "text-sm leading-5 text-destructive",
+      // For text nested inside another Typography: adds no size/color so the
+      // parent variant's styles flow through.
+      inherit: "",
     },
   },
   defaultVariants: {
@@ -35,6 +38,7 @@ const variantElements: Record<TypographyVariant, React.ElementType> = {
   small: "p",
   caption: "span",
   error: "p",
+  inherit: "span",
 };
 
 type TypographyProps<T extends React.ElementType> = {

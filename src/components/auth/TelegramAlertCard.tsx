@@ -18,11 +18,7 @@ export const TelegramAlertCard = () => {
         </span>
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Typography
-              as="span"
-              variant="small"
-              className="font-semibold text-foreground"
-            >
+            <Typography as="span" variant="body" className="font-semibold">
               {alert.sender}
             </Typography>
             <Typography
@@ -33,13 +29,9 @@ export const TelegramAlertCard = () => {
               {alert.badge}
             </Typography>
           </div>
-          <Typography variant="small" className="leading-6">
+          <Typography variant="body">
             {alert.message}{" "}
-            <Typography
-              as="span"
-              variant="small"
-              className="font-medium text-primary"
-            >
+            <Typography variant="inherit" className="font-medium text-primary">
               {alert.linkText}
             </Typography>
           </Typography>
