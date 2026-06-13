@@ -48,7 +48,7 @@ export const SignInForm = () => {
       .eq("id", data.user.id)
       .maybeSingle();
     router.push(
-      profile?.onboarding_completed_at ? "/account" : "/connect-gmail",
+      profile?.onboarding_completed_at ? "/dashboard" : "/profile-setup",
     );
   };
 

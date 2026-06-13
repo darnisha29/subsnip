@@ -90,7 +90,7 @@ export const ProfileSetupForm = () => {
       );
       return;
     }
-    router.push("/account");
+    router.push("/dashboard");
   };
 
   return (

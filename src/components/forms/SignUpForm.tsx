@@ -47,7 +47,7 @@ export const SignUpForm = () => {
       return;
     }
     if (data.session) {
-      router.push("/connect-gmail");
+      router.push("/profile-setup");
       return;
     }
     setIsSuccess(true);

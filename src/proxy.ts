@@ -2,20 +2,27 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_PATHS = [
+  "/dashboard",
   "/account",
-  "/connect-gmail",
-  "/scan",
-  "/spend-reveal",
-  "/link-telegram",
   "/profile-setup",
   "/reset-password",
 ];
 
 const GUEST_ONLY_PATHS = ["/signin", "/signup"];
 
+// Onboarding routes parked for now (Gmail/scan/telegram). Their feature code
+// lives under src/sections + src/lib/gmail; here we just bounce visitors to
+// the dashboard until they're re-enabled.
+const DISABLED_PATHS = [
+  "/connect-gmail",
+  "/scan",
+  "/spend-reveal",
+  "/link-telegram",
+];
+
 // Refreshes the Supabase session cookie on every matched request and
 // enforces auth: protected routes need a session, guest-only routes bounce
-// signed-in users to /account. Session presence only — no DB calls here.
+// signed-in users to /dashboard. Session presence only — no DB calls here.
 export const proxy = async (request: NextRequest) => {
   let response = NextResponse.next({ request });
 
@@ -43,6 +50,11 @@ export const proxy = async (request: NextRequest) => {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  if (DISABLED_PATHS.some((path) => pathname === path)) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   const isProtected = PROTECTED_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
@@ -54,7 +66,7 @@ export const proxy = async (request: NextRequest) => {
   }
 
   if (user && isGuestOnly) {
-    return NextResponse.redirect(new URL("/account", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return response;
@@ -62,14 +74,15 @@ export const proxy = async (request: NextRequest) => {
 
 export const config = {
   matcher: [
+    "/dashboard/:path*",
     "/account/:path*",
-    "/connect-gmail",
-    "/scan",
-    "/spend-reveal",
-    "/link-telegram",
     "/profile-setup",
     "/reset-password",
     "/signin",
     "/signup",
+    "/connect-gmail",
+    "/scan",
+    "/spend-reveal",
+    "/link-telegram",
   ],
 };
