@@ -7,8 +7,13 @@ export const metadata: Metadata = {
   description: "Find your forgotten subscriptions with a read-only Gmail scan.",
 };
 
-const ConnectGmail = () => {
-  return <ConnectGmailPage />;
+const ConnectGmail = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) => {
+  const { error } = await searchParams;
+  return <ConnectGmailPage hasError={error === "gmail_connect_failed"} />;
 };
 
 export default ConnectGmail;

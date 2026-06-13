@@ -14,26 +14,29 @@ export const connectGmailContent = {
   ],
   cta: "Connect Gmail",
   skip: "Skip — I'll add subs manually",
+  errorMessage: "Couldn't connect Gmail. Please try again.",
 } as const;
 
 export const scanContent = {
   step: 2,
   title: "Scanning your inbox",
   subtitle: "Sit tight — finding receipts for recurring charges.",
+  preparingLabel: "Preparing scan…",
   processingLabel: "Processing emails",
-  totalEmails: 2847,
   remainingSuffix: "remaining",
+  doneLabel: "Done!",
   foundLabel: "Found so far",
   foundMetaSuffix: "/mo",
   subscriptionsLabel: "subscriptions",
   newBadge: "New",
-  subscriptions: [
-    { name: "Netflix", monthly: 649 },
-    { name: "Cure.fit", monthly: 2499 },
-    { name: "Adobe Creative Cloud", monthly: 4232 },
-    { name: "ChatGPT Plus", monthly: 1750 },
-  ],
   lookingLabel: "Looking for more…",
+  failed: {
+    title: "Scan failed",
+    message:
+      "We couldn't finish scanning your inbox. Your data is safe — nothing was stored.",
+    retryCta: "Try again",
+    skipCta: "Skip for now",
+  },
 } as const;
 
 export const spendRevealContent = {
@@ -42,14 +45,17 @@ export const spendRevealContent = {
   fallbackGreeting: "Here's the damage",
   title: "You're spending this much on subscriptions",
   perYearLabel: "Total · per year",
-  amount: 177840,
-  meta: "₹14,820/month · 12 active subscriptions",
+  monthSuffix: "/month",
+  subsSuffix: "active subscriptions",
   forgottenLabel: "Likely forgotten",
   foundLabel: "found",
-  forgotten: [
-    { name: "Cure.fit", reason: "Not opened in 67 days", amount: "₹2,499/mo" },
-    { name: "Skillshare", reason: "Trial auto-converted", amount: "₹2,400/yr" },
-  ],
+  trialReason: "Trial — converts to paid",
+  staleReason: "No charge seen in 45+ days",
+  empty: {
+    title: "No subscriptions found",
+    message:
+      "We didn't spot recurring charges in the last 6 months. You can add subscriptions manually anytime.",
+  },
   cta: "Continue — Get alerts on Telegram",
 } as const;
 
