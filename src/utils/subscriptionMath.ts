@@ -1,7 +1,10 @@
 import type { Database } from "@/types/supabase";
+import { daysUntil } from "@/utils/formatDate";
 
 type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
 type BillingCycle = Database["public"]["Enums"]["billing_cycle"];
+
+export const RENEWING_SOON_DAYS = 7;
 
 const CYCLES_PER_YEAR: Record<BillingCycle, number> = {
   weekly: 52,
@@ -38,6 +41,40 @@ export const monthlyEquivalentINR = (subscriptions: Subscription[]): number =>
 export const activeSubscriptionCount = (
   subscriptions: Subscription[],
 ): number => activeOnly(subscriptions).length;
+
+// Active rows whose next renewal falls within the next `withinDays` days
+// (today counts as 0). Rows without a renewal date are excluded.
+export const renewingSoon = (
+  subscriptions: Subscription[],
+  withinDays = RENEWING_SOON_DAYS,
+): Subscription[] =>
+  activeOnly(subscriptions).filter((subscription) => {
+    if (!subscription.next_renewal_date) {
+      return false;
+    }
+    const days = daysUntil(subscription.next_renewal_date);
+    return days >= 0 && days <= withinDays;
+  });
+
+// Total INR charged by the rows renewing in the window — the "this week" stat.
+export const renewingSoonTotalINR = (
+  subscriptions: Subscription[],
+  withinDays = RENEWING_SOON_DAYS,
+): number =>
+  Math.round(
+    renewingSoon(subscriptions, withinDays).reduce(
+      (total, subscription) => total + Number(subscription.amount_inr),
+      0,
+    ),
+  );
+
+export const trialSubscriptions = (
+  subscriptions: Subscription[],
+): Subscription[] =>
+  subscriptions.filter(
+    (subscription) =>
+      subscription.status === "trial" || subscription.is_trial,
+  );
 
 // "Likely forgotten": still active but no charge email seen recently, or a
 // trial that quietly converts.

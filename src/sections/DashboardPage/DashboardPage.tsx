@@ -1,177 +1,273 @@
 "use client";
 
-import { LoaderCircle, Plus } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { LoaderCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { AppLogo } from "@/components/common/AppLogo";
-import { CountUp } from "@/components/common/CountUp";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Typography } from "@/components/common/Typography";
-import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
-import { AddSubscriptionForm } from "@/components/forms/AddSubscriptionForm";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { SubscriptionFormDialog } from "@/components/dashboard/SubscriptionFormDialog";
+import { SubscriptionGridView } from "@/components/dashboard/SubscriptionGridView";
+import { SubscriptionHeader } from "@/components/dashboard/SubscriptionHeader";
+import { SubscriptionListView } from "@/components/dashboard/SubscriptionListView";
+import { SubscriptionStats } from "@/components/dashboard/SubscriptionStats";
+import { SubscriptionToolbar } from "@/components/dashboard/SubscriptionToolbar";
 import { dashboardContent } from "@/data/dashboard";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { supabase } from "@/lib/supabase";
-import { formatINR } from "@/utils/formatCurrency";
+import type { SubscriptionFormValues } from "@/lib/validations/subscription";
+import {
+  type DisplaySubscription,
+  type FilterKey,
+  filterSubscriptions,
+  isTrialRow,
+  type SortKey,
+  sortSubscriptions,
+  distinctCategories,
+  groupSubscriptions,
+  type ViewMode,
+} from "@/utils/subscriptionFilters";
 import {
   activeSubscriptionCount,
   annualTotalINR,
   monthlyEquivalentINR,
+  renewingSoon,
+  renewingSoonTotalINR,
+  trialSubscriptions,
 } from "@/utils/subscriptionMath";
 
-export const DashboardPage = () => {
-  const { subscriptions, status, refetch } = useSubscriptions();
-  const [serviceNames, setServiceNames] = useState<Record<string, string>>({});
-  const [isAddOpen, setIsAddOpen] = useState(false);
+interface ServiceMeta {
+  name: string;
+  category: string | null;
+}
 
-  // Catalog names for any service-linked rows; manual rows use manual_name.
+const GROUP_LABELS = {
+  renewing: dashboardContent.groups.renewingThisWeek,
+  active: dashboardContent.groups.active,
+  trials: dashboardContent.filters.trials,
+};
+
+const editDefaults = (
+  subscription: DisplaySubscription,
+): SubscriptionFormValues => ({
+  name: subscription.displayName,
+  amount: Number(subscription.amount),
+  billingCycle: subscription.billing_cycle,
+  category: subscription.user_category ?? "",
+  nextRenewalDate: subscription.next_renewal_date ?? "",
+  isTrial: isTrialRow(subscription),
+});
+
+export const DashboardPage = () => {
+  const {
+    subscriptions,
+    status,
+    createSubscription,
+    updateSubscription,
+    removeSubscription,
+  } = useSubscriptions();
+
+  const [services, setServices] = useState<Record<string, ServiceMeta>>({});
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [category, setCategory] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>("renewal");
+  const [view, setView] = useState<ViewMode>("grid");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editing, setEditing] = useState<DisplaySubscription | null>(null);
+  const [deleting, setDeleting] = useState<DisplaySubscription | null>(null);
+
+  // Catalog metadata for service-linked rows; manual rows fall back to their
+  // own manual_name / user_category.
   useEffect(() => {
     supabase
       .from("services")
-      .select("id, name")
+      .select("id, name, category")
       .then(({ data }) => {
         if (data) {
-          setServiceNames(
+          setServices(
             Object.fromEntries(
-              data.map((service) => [service.id, service.name]),
+              data.map((service) => [
+                service.id,
+                { name: service.name, category: service.category },
+              ]),
             ),
           );
         }
       });
   }, []);
 
-  const isLoading = status === "idle" || status === "loading";
-  const annualTotal = annualTotalINR(subscriptions);
-  const monthlyEquivalent = monthlyEquivalentINR(subscriptions);
-  const activeCount = activeSubscriptionCount(subscriptions);
-  const isEmpty = !isLoading && subscriptions.length === 0;
-
-  const displayName = (subscription: (typeof subscriptions)[number]): string =>
-    (subscription.service_id && serviceNames[subscription.service_id]) ||
-    subscription.manual_name ||
-    "Subscription";
-
-  const handleAdded = () => {
-    setIsAddOpen(false);
-    void refetch();
-  };
-
-  const handleDelete = async (id: string) => {
-    await supabase.from("subscriptions").delete().eq("id", id);
-    void refetch();
-  };
-
-  const addDialog = (
-    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-      <DialogTrigger asChild>
-        <Button className="h-10 rounded-full text-sm font-semibold">
-          <Plus aria-hidden="true" className="size-4" />
-          {dashboardContent.addCta}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{dashboardContent.form.title}</DialogTitle>
-          <DialogDescription>
-            {dashboardContent.form.description}
-          </DialogDescription>
-        </DialogHeader>
-        <AddSubscriptionForm onSuccess={handleAdded} />
-      </DialogContent>
-    </Dialog>
+  const displaySubs = useMemo<DisplaySubscription[]>(
+    () =>
+      subscriptions.map((subscription) => {
+        const service = subscription.service_id
+          ? services[subscription.service_id]
+          : undefined;
+        return {
+          ...subscription,
+          displayName:
+            service?.name || subscription.manual_name || "Subscription",
+          displayCategory:
+            subscription.user_category || service?.category || null,
+        };
+      }),
+    [subscriptions, services],
   );
 
+  const groups = useMemo(() => {
+    const visible = sortSubscriptions(
+      filterSubscriptions(displaySubs, filter, category),
+      sort,
+    );
+    return groupSubscriptions(visible, filter, GROUP_LABELS);
+  }, [displaySubs, filter, category, sort]);
+
+  const isLoading = status === "idle" || status === "loading";
+  const isEmpty = !isLoading && subscriptions.length === 0;
+
+  const counts = {
+    all: subscriptions.length,
+    renewing: renewingSoon(subscriptions).length,
+    trials: trialSubscriptions(subscriptions).length,
+  };
+
+  const handleCreate = async (values: SubscriptionFormValues) => {
+    const result = await createSubscription(values);
+    if (!result.error) {
+      setIsAddOpen(false);
+    }
+    return result;
+  };
+
+  const handleUpdate = async (values: SubscriptionFormValues) => {
+    if (!editing) {
+      return {};
+    }
+    const result = await updateSubscription(editing, values);
+    if (!result.error) {
+      setEditing(null);
+    }
+    return result;
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleting) {
+      await removeSubscription(deleting.id);
+    }
+    setDeleting(null);
+  };
+
   return (
-    <div className="flex min-h-dvh flex-col bg-linear-to-b from-background to-surface-tint">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-4 sm:px-6">
-        <AppLogo />
-        <Button asChild variant="ghost" size="sm" className="rounded-full">
-          <Link href="/account">{dashboardContent.accountCta}</Link>
-        </Button>
-      </header>
+    <main className="flex flex-1 flex-col bg-linear-to-b from-background to-surface-tint px-4 py-6 sm:px-8 sm:py-9">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <SubscriptionHeader
+          activeCount={activeSubscriptionCount(subscriptions)}
+          monthlyOutflow={monthlyEquivalentINR(subscriptions)}
+          onAddClick={() => setIsAddOpen(true)}
+        />
 
-      <main className="flex flex-1 justify-center px-4 py-8 sm:py-10">
-        <div className="flex w-full max-w-2xl flex-col gap-6">
-          <div className="flex items-center justify-between gap-3">
-            <Typography variant="h2">{dashboardContent.title}</Typography>
-            {!isEmpty && addDialog}
+        {isLoading ? (
+          <div
+            role="status"
+            aria-label="Loading"
+            className="flex justify-center py-24"
+          >
+            <LoaderCircle
+              aria-hidden="true"
+              className="size-7 animate-spin text-primary"
+            />
           </div>
+        ) : isEmpty ? (
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-6 py-16 text-center">
+            <Typography variant="h3">{dashboardContent.empty.title}</Typography>
+            <Typography variant="small">
+              {dashboardContent.empty.message}
+            </Typography>
+          </div>
+        ) : (
+          <>
+            <SubscriptionStats
+              monthly={monthlyEquivalentINR(subscriptions)}
+              annual={annualTotalINR(subscriptions)}
+              thisWeekTotal={renewingSoonTotalINR(subscriptions)}
+              thisWeekCount={counts.renewing}
+              trialsCount={counts.trials}
+              activeCount={activeSubscriptionCount(subscriptions)}
+            />
 
-          {isLoading ? (
-            <div
-              role="status"
-              aria-label="Loading"
-              className="flex justify-center py-20"
-            >
-              <LoaderCircle
-                aria-hidden="true"
-                className="size-7 animate-spin text-primary"
+            <SubscriptionToolbar
+              filter={filter}
+              onFilterChange={setFilter}
+              counts={counts}
+              categories={distinctCategories(displaySubs)}
+              category={category}
+              onCategoryChange={setCategory}
+              sort={sort}
+              onSortChange={setSort}
+              view={view}
+              onViewChange={setView}
+            />
+
+            {groups.length === 0 ? (
+              <Typography variant="small" className="py-10 text-center">
+                Nothing matches these filters.
+              </Typography>
+            ) : view === "grid" ? (
+              <SubscriptionGridView
+                groups={groups}
+                onEdit={setEditing}
+                onDelete={setDeleting}
               />
-            </div>
-          ) : isEmpty ? (
-            <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border px-6 py-14 text-center">
-              <div className="flex flex-col gap-1.5">
-                <Typography variant="h3">
-                  {dashboardContent.empty.title}
-                </Typography>
-                <Typography variant="small">
-                  {dashboardContent.empty.message}
-                </Typography>
-              </div>
-              {addDialog}
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col items-center gap-1.5 rounded-xl bg-linear-to-b from-secondary to-secondary/40 px-4 py-7 text-center">
-                <Typography
-                  as="span"
-                  variant="caption"
-                  className="font-semibold tracking-wider text-pill-foreground/80 uppercase"
-                >
-                  {dashboardContent.summary.perYearLabel}
-                </Typography>
-                <CountUp
-                  value={annualTotal}
-                  prefix="₹"
-                  className="text-4xl font-bold tracking-tight text-primary tabular-nums sm:text-5xl"
-                />
-                <Typography
-                  as="span"
-                  variant="small"
-                  className="text-pill-foreground"
-                >
-                  {formatINR(monthlyEquivalent)}
-                  {dashboardContent.summary.monthSuffix} · {activeCount}{" "}
-                  {dashboardContent.summary.subsSuffix}
-                </Typography>
-              </div>
+            ) : (
+              <SubscriptionListView
+                groups={groups}
+                onEdit={setEditing}
+                onDelete={setDeleting}
+              />
+            )}
+          </>
+        )}
+      </div>
 
-              <ul className="flex flex-col gap-2.5">
-                {subscriptions.map((subscription) => (
-                  <li key={subscription.id}>
-                    <SubscriptionCard
-                      name={displayName(subscription)}
-                      amountInr={Number(subscription.amount_inr)}
-                      billingCycle={subscription.billing_cycle}
-                      nextRenewalDate={subscription.next_renewal_date}
-                      onDelete={() => handleDelete(subscription.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      </main>
-    </div>
+      <SubscriptionFormDialog
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        title={dashboardContent.form.addTitle}
+        description={dashboardContent.form.addDescription}
+        defaultValues={{
+          name: "",
+          billingCycle: "monthly",
+          category: "",
+          nextRenewalDate: "",
+          isTrial: false,
+        }}
+        submitCta={dashboardContent.form.addSubmitCta}
+        submittingCta={dashboardContent.form.addSubmittingCta}
+        onSubmit={handleCreate}
+      />
+
+      {editing && (
+        <SubscriptionFormDialog
+          open
+          onOpenChange={(open) => !open && setEditing(null)}
+          title={dashboardContent.form.editTitle}
+          description={dashboardContent.form.editDescription}
+          defaultValues={editDefaults(editing)}
+          nameEditable={!editing.service_id}
+          submitCta={dashboardContent.form.editSubmitCta}
+          submittingCta={dashboardContent.form.editSubmittingCta}
+          onSubmit={handleUpdate}
+        />
+      )}
+
+      <ConfirmDialog
+        destructive
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={dashboardContent.deleteDialog.title}
+        description={dashboardContent.deleteDialog.description}
+        cancelLabel={dashboardContent.deleteDialog.cancel}
+        confirmLabel={dashboardContent.deleteDialog.confirm}
+        onConfirm={handleConfirmDelete}
+      />
+    </main>
   );
 };

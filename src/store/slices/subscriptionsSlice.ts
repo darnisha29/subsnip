@@ -34,9 +34,29 @@ const subscriptionsSlice = createSlice({
       state.status = "failed";
       state.error = action.payload;
     },
+    // Insert or replace a single row in place so create/edit reflect instantly
+    // without a full refetch.
+    subscriptionUpserted: (state, action: PayloadAction<Subscription>) => {
+      const index = state.items.findIndex(
+        (item) => item.id === action.payload.id,
+      );
+      if (index === -1) {
+        state.items.unshift(action.payload);
+      } else {
+        state.items[index] = action.payload;
+      }
+    },
+    subscriptionRemoved: (state, action: PayloadAction<string>) => {
+      state.items = state.items.filter((item) => item.id !== action.payload);
+    },
   },
 });
 
-export const { fetchStarted, fetchSucceeded, fetchFailed } =
-  subscriptionsSlice.actions;
+export const {
+  fetchStarted,
+  fetchSucceeded,
+  fetchFailed,
+  subscriptionUpserted,
+  subscriptionRemoved,
+} = subscriptionsSlice.actions;
 export const subscriptionsReducer = subscriptionsSlice.reducer;

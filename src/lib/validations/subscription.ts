@@ -13,7 +13,7 @@ const BILLING_CYCLES: BillingCycle[] = [
   "lifetime",
 ];
 
-export const addSubscriptionSchema = yup.object({
+export const subscriptionSchema = yup.object({
   name: yup.string().trim().required("Name is required"),
   amount: yup
     .number()
@@ -25,9 +25,9 @@ export const addSubscriptionSchema = yup.object({
     .mixed<BillingCycle>()
     .oneOf(BILLING_CYCLES, "Choose a billing cycle")
     .required("Choose a billing cycle"),
+  category: yup.string().default(""),
   nextRenewalDate: yup.string().default(""),
+  isTrial: yup.boolean().default(false),
 });
 
-export type AddSubscriptionFormValues = yup.InferType<
-  typeof addSubscriptionSchema
->;
+export type SubscriptionFormValues = yup.InferType<typeof subscriptionSchema>;

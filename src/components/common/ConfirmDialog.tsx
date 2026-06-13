@@ -14,7 +14,10 @@ import {
 import { cn } from "@/lib/utils";
 
 interface ConfirmDialogProps {
-  trigger: React.ReactNode;
+  // Omit `trigger` for controlled use (drive `open`/`onOpenChange` yourself).
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   description: string;
   cancelLabel: string;
@@ -25,6 +28,8 @@ interface ConfirmDialogProps {
 
 export const ConfirmDialog = ({
   trigger,
+  open,
+  onOpenChange,
   title,
   description,
   cancelLabel,
@@ -33,8 +38,8 @@ export const ConfirmDialog = ({
   destructive,
 }: ConfirmDialogProps) => {
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {trigger && <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

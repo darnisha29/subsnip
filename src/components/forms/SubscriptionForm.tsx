@@ -3,29 +3,37 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type DefaultValues, useForm } from "react-hook-form";
 
 import { SelectField } from "@/components/common/SelectField";
 import { TextField } from "@/components/common/TextField";
 import { Typography } from "@/components/common/Typography";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { dashboardContent } from "@/data/dashboard";
-import { supabase } from "@/lib/supabase";
 import {
-  type AddSubscriptionFormValues,
-  addSubscriptionSchema,
   type BillingCycle,
+  type SubscriptionFormValues,
+  subscriptionSchema,
 } from "@/lib/validations/subscription";
 
-interface AddSubscriptionFormProps {
-  onSuccess: () => void;
+interface SubscriptionFormProps {
+  defaultValues: DefaultValues<SubscriptionFormValues>;
+  nameEditable?: boolean;
+  submitCta: string;
+  submittingCta: string;
+  onSubmit: (values: SubscriptionFormValues) => Promise<{ error?: string }>;
 }
 
 const content = dashboardContent.form;
 
-export const AddSubscriptionForm = ({
-  onSuccess,
-}: AddSubscriptionFormProps) => {
+export const SubscriptionForm = ({
+  defaultValues,
+  nameEditable = true,
+  submitCta,
+  submittingCta,
+  onSubmit,
+}: SubscriptionFormProps) => {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -34,47 +42,26 @@ export const AddSubscriptionForm = ({
     control,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<AddSubscriptionFormValues>({
-    resolver: yupResolver(addSubscriptionSchema),
+  } = useForm<SubscriptionFormValues>({
+    resolver: yupResolver(subscriptionSchema),
     mode: "onTouched",
-    defaultValues: { billingCycle: "monthly", nextRenewalDate: "" },
+    defaultValues,
   });
 
-  const canSubmit = addSubscriptionSchema.isValidSync(watch());
+  const canSubmit = subscriptionSchema.isValidSync(watch());
 
-  const onSubmit = async (values: AddSubscriptionFormValues) => {
+  const submit = async (values: SubscriptionFormValues) => {
     setServerError(null);
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData.user) {
-      setServerError("Your session has expired. Please sign in again.");
-      return;
+    const result = await onSubmit(values);
+    if (result.error) {
+      setServerError(result.error);
     }
-    // Manual entry: no catalog service, so service_id stays null and the name
-    // lives in manual_name (per the subsnip-be subscriptions contract).
-    const { error } = await supabase.from("subscriptions").insert({
-      user_id: userData.user.id,
-      service_id: null,
-      manual_name: values.name,
-      amount: values.amount,
-      currency: "INR",
-      amount_inr: values.amount,
-      billing_cycle: values.billingCycle,
-      next_renewal_date: values.nextRenewalDate || null,
-      status: "active",
-      detection_source: "manual",
-      confidence_score: 1,
-    });
-    if (error) {
-      setServerError(error.message);
-      return;
-    }
-    onSuccess();
   };
 
   return (
     <form
       noValidate
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(submit)}
       className="flex flex-col gap-5"
     >
       <TextField
@@ -83,6 +70,7 @@ export const AddSubscriptionForm = ({
         label={content.name.label}
         placeholder={content.name.placeholder}
         autoComplete="off"
+        disabled={!nameEditable}
         error={errors.name?.message}
         {...register("name")}
       />
@@ -110,12 +98,47 @@ export const AddSubscriptionForm = ({
           />
         )}
       />
+      <Controller
+        control={control}
+        name="category"
+        render={({ field }) => (
+          <SelectField
+            id="category"
+            label={content.category.label}
+            placeholder={content.category.placeholder}
+            options={content.category.options}
+            value={field.value || undefined}
+            onChange={field.onChange}
+            error={errors.category?.message}
+          />
+        )}
+      />
       <TextField
         id="nextRenewalDate"
         type="date"
         label={content.nextRenewalDate.label}
         error={errors.nextRenewalDate?.message}
         {...register("nextRenewalDate")}
+      />
+
+      <Controller
+        control={control}
+        name="isTrial"
+        render={({ field }) => (
+          <label
+            htmlFor="isTrial"
+            className="flex cursor-pointer items-center gap-2.5"
+          >
+            <Checkbox
+              id="isTrial"
+              checked={field.value}
+              onCheckedChange={(checked) => field.onChange(checked === true)}
+            />
+            <Typography as="span" variant="small" className="text-foreground">
+              {content.trial.label}
+            </Typography>
+          </label>
+        )}
       />
 
       {serverError && (
@@ -133,10 +156,10 @@ export const AddSubscriptionForm = ({
         {isSubmitting ? (
           <>
             <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-            {content.submittingCta}
+            {submittingCta}
           </>
         ) : (
-          content.submitCta
+          submitCta
         )}
       </Button>
     </form>

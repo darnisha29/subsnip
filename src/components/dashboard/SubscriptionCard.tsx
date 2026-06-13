@@ -1,98 +1,106 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
-
-import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Typography } from "@/components/common/Typography";
-import { Button } from "@/components/ui/button";
+import { SubscriptionActions } from "@/components/dashboard/SubscriptionActions";
+import { SubscriptionAvatar } from "@/components/dashboard/SubscriptionAvatar";
+import { SubscriptionBadges } from "@/components/dashboard/SubscriptionBadges";
 import { Card, CardContent } from "@/components/ui/card";
-import { dashboardContent } from "@/data/dashboard";
-import type { Database } from "@/types/supabase";
+import { CYCLE_PHRASE } from "@/data/dashboard";
+import { cn } from "@/lib/utils";
 import { formatINR } from "@/utils/formatCurrency";
-import { formatDateShort } from "@/utils/formatDate";
-
-type BillingCycle = Database["public"]["Enums"]["billing_cycle"];
-
-const CYCLE_SUFFIX: Record<BillingCycle, string> = {
-  weekly: "/wk",
-  monthly: "/mo",
-  quarterly: "/qtr",
-  semi_annual: "/6mo",
-  annual: "/yr",
-  lifetime: "",
-  unknown: "/mo",
-};
+import { daysUntil, renewalChip, renewalPhrase } from "@/utils/formatDate";
+import type { DisplaySubscription } from "@/utils/subscriptionFilters";
 
 interface SubscriptionCardProps {
-  name: string;
-  amountInr: number;
-  billingCycle: BillingCycle;
-  nextRenewalDate: string | null;
+  subscription: DisplaySubscription;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
 export const SubscriptionCard = ({
-  name,
-  amountInr,
-  billingCycle,
-  nextRenewalDate,
+  subscription,
+  onEdit,
   onDelete,
 }: SubscriptionCardProps) => {
+  const renewal = subscription.next_renewal_date;
+  const chip = renewal ? renewalChip(renewal) : null;
+  const urgent = renewal !== null && daysUntil(renewal) <= 1;
+  const meta = [subscription.displayCategory, CYCLE_PHRASE[subscription.billing_cycle]]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <Card className="gap-0 py-0 ring-border">
-      <CardContent className="flex items-center justify-between gap-3 p-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <Typography
-            as="span"
-            aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground"
-          >
-            {name.charAt(0).toUpperCase()}
-          </Typography>
-          <div className="flex min-w-0 flex-col">
+    <Card className="h-full gap-0 py-0 ring-border transition-shadow hover:shadow-md">
+      <CardContent className="flex h-full flex-col gap-4 p-5">
+        <div className="flex items-start justify-between gap-2">
+          <SubscriptionAvatar name={subscription.displayName} />
+          <div className="flex items-center gap-1.5">
+            {chip && (
+              <Typography
+                as="span"
+                variant="inherit"
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase",
+                  urgent
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-secondary text-secondary-foreground",
+                )}
+              >
+                {chip}
+              </Typography>
+            )}
+            <SubscriptionActions
+              name={subscription.displayName}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
             <Typography
               as="span"
               variant="body"
               className="truncate font-semibold"
             >
-              {name}
+              {subscription.displayName}
             </Typography>
-            <Typography as="span" variant="small">
-              {nextRenewalDate
-                ? `${dashboardContent.list.renewsLabel} ${formatDateShort(nextRenewalDate)}`
-                : dashboardContent.list.noRenewal}
+            <SubscriptionBadges subscription={subscription} />
+          </div>
+          {meta && (
+            <Typography as="span" variant="small" className="capitalize">
+              {meta}
+            </Typography>
+          )}
+        </div>
+
+        <div className="mt-auto flex items-end justify-between gap-3">
+          <div className="flex flex-col">
+            <Typography
+              as="span"
+              className="text-2xl font-bold tracking-tight tabular-nums"
+            >
+              {formatINR(Number(subscription.amount_inr))}
+            </Typography>
+            <Typography as="span" variant="caption">
+              {subscription.currency !== "INR" &&
+                `${subscription.currency} ${subscription.amount} · `}
+              {CYCLE_PHRASE[subscription.billing_cycle]}
             </Typography>
           </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Typography
-            as="span"
-            variant="body"
-            className="font-semibold whitespace-nowrap"
-          >
-            {formatINR(amountInr)}
-            <Typography variant="inherit" className="text-tertiary">
-              {CYCLE_SUFFIX[billingCycle]}
+          {renewal && (
+            <Typography
+              as="span"
+              variant="small"
+              className={cn(
+                "shrink-0 font-medium",
+                urgent ? "text-destructive" : "text-tertiary",
+              )}
+            >
+              {renewalPhrase(renewal)}
             </Typography>
-          </Typography>
-          <ConfirmDialog
-            destructive
-            title={dashboardContent.deleteDialog.title}
-            description={dashboardContent.deleteDialog.description}
-            cancelLabel={dashboardContent.deleteDialog.cancel}
-            confirmLabel={dashboardContent.deleteDialog.confirm}
-            onConfirm={onDelete}
-            trigger={
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Delete ${name}`}
-                className="text-tertiary hover:text-destructive"
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            }
-          />
+          )}
         </div>
       </CardContent>
     </Card>
