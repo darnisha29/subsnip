@@ -32,6 +32,31 @@ export const dashboardContent = {
   view: {
     grid: "Grid view",
     list: "List view",
+    calendar: "Calendar view",
+  },
+
+  calendar: {
+    today: "Today",
+    prev: "Previous",
+    next: "Next",
+    week: "Week",
+    month: "Month",
+    weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    more: "more",
+    overviewSuffix: "overview",
+    totalSpend: "Total spend",
+    renewals: "Renewals",
+    comingUp: "Coming up (7d)",
+    trialsEnding: "Trials ending",
+    legendTitle: "Legend",
+    legend: {
+      urgent: "Renews ≤ 1 day",
+      week: "Renews this week",
+      upcoming: "Upcoming",
+      trial: "Trial ending",
+    },
+    upNextTitle: "Up next",
+    upNextEmpty: "No upcoming renewals.",
   },
 
   groups: {
@@ -50,6 +75,8 @@ export const dashboardContent = {
     title: "No subscriptions yet",
     message: "Add your first subscription to start tracking your spend.",
   },
+
+  noMatches: "Nothing matches these filters.",
 
   list: {
     renewsLabel: "Renews",

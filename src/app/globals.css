@@ -13,6 +13,9 @@
   --color-pill: var(--secondary);
   --color-pill-foreground: var(--secondary-foreground);
   --color-success: #3b6d11;
+  /* Amber for the "renews this week" calendar state (between coral and plum) */
+  --color-warning: #a16207;
+  --color-warning-tint: #f7edd6;
   --color-tertiary: #888780;
   /* Bottom stop of the auth/onboarding page gradient */
   --color-surface-tint: #f4f3ff;

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Typography } from "@/components/common/Typography";
+import { SubscriptionCalendarView } from "@/components/dashboard/SubscriptionCalendarView";
 import { SubscriptionFormDialog } from "@/components/dashboard/SubscriptionFormDialog";
 import { SubscriptionGridView } from "@/components/dashboard/SubscriptionGridView";
 import { SubscriptionHeader } from "@/components/dashboard/SubscriptionHeader";
@@ -15,6 +16,12 @@ import { dashboardContent } from "@/data/dashboard";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { supabase } from "@/lib/supabase";
 import type { SubscriptionFormValues } from "@/lib/validations/subscription";
+import {
+  addDays,
+  addMonths,
+  type CalendarMode,
+  monthLabel,
+} from "@/utils/calendar";
 import {
   type DisplaySubscription,
   type FilterKey,
@@ -71,6 +78,8 @@ export const DashboardPage = () => {
   const [category, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("renewal");
   const [view, setView] = useState<ViewMode>("grid");
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
+  const [anchor, setAnchor] = useState<Date>(() => new Date());
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editing, setEditing] = useState<DisplaySubscription | null>(null);
   const [deleting, setDeleting] = useState<DisplaySubscription | null>(null);
@@ -155,6 +164,13 @@ export const DashboardPage = () => {
     setDeleting(null);
   };
 
+  const shiftPeriod = (direction: 1 | -1) =>
+    setAnchor((current) =>
+      calendarMode === "month"
+        ? addMonths(current, direction)
+        : addDays(current, direction * 7),
+    );
+
   return (
     <main className="flex flex-1 flex-col bg-linear-to-b from-background to-surface-tint px-4 py-6 sm:px-8 sm:py-9">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -184,14 +200,16 @@ export const DashboardPage = () => {
           </div>
         ) : (
           <>
-            <SubscriptionStats
-              monthly={monthlyEquivalentINR(subscriptions)}
-              annual={annualTotalINR(subscriptions)}
-              thisWeekTotal={renewingSoonTotalINR(subscriptions)}
-              thisWeekCount={counts.renewing}
-              trialsCount={counts.trials}
-              activeCount={activeSubscriptionCount(subscriptions)}
-            />
+            {view !== "calendar" && (
+              <SubscriptionStats
+                monthly={monthlyEquivalentINR(subscriptions)}
+                annual={annualTotalINR(subscriptions)}
+                thisWeekTotal={renewingSoonTotalINR(subscriptions)}
+                thisWeekCount={counts.renewing}
+                trialsCount={counts.trials}
+                activeCount={activeSubscriptionCount(subscriptions)}
+              />
+            )}
 
             <SubscriptionToolbar
               filter={filter}
@@ -204,11 +222,24 @@ export const DashboardPage = () => {
               onSortChange={setSort}
               view={view}
               onViewChange={setView}
+              calendarMode={calendarMode}
+              onCalendarModeChange={setCalendarMode}
+              monthLabel={monthLabel(anchor)}
+              onPrevPeriod={() => shiftPeriod(-1)}
+              onNextPeriod={() => shiftPeriod(1)}
+              onToday={() => setAnchor(new Date())}
             />
 
-            {groups.length === 0 ? (
+            {view === "calendar" ? (
+              <SubscriptionCalendarView
+                subscriptions={displaySubs}
+                anchor={anchor}
+                mode={calendarMode}
+                onSelect={setEditing}
+              />
+            ) : groups.length === 0 ? (
               <Typography variant="small" className="py-10 text-center">
-                Nothing matches these filters.
+                {dashboardContent.noMatches}
               </Typography>
             ) : view === "grid" ? (
               <SubscriptionGridView

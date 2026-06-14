@@ -13,10 +13,31 @@ export type DisplaySubscription = Subscription & {
 
 export type FilterKey = "all" | "renewing" | "trials";
 export type SortKey = "renewal" | "name" | "amount";
-export type ViewMode = "grid" | "list";
+export type ViewMode = "grid" | "list" | "calendar";
+
+// Calendar colour state for a renewal: trial wins over timing, then by how soon
+// it falls relative to today. Used for chips, dots and the legend.
+export type RenewalStatus = "urgent" | "week" | "trial" | "upcoming";
 
 export const isTrialRow = (subscription: Subscription): boolean =>
   subscription.status === "trial" || subscription.is_trial;
+
+export const renewalStatus = (subscription: Subscription): RenewalStatus => {
+  if (isTrialRow(subscription)) {
+    return "trial";
+  }
+  if (!subscription.next_renewal_date) {
+    return "upcoming";
+  }
+  const days = daysUntil(subscription.next_renewal_date);
+  if (days >= 0 && days <= 1) {
+    return "urgent";
+  }
+  if (days >= 0 && days <= RENEWING_SOON_DAYS) {
+    return "week";
+  }
+  return "upcoming";
+};
 
 export const isRenewingSoon = (
   subscription: Subscription,
